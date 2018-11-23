@@ -1,7 +1,7 @@
 import json
 from rake_nltk import Metric, Rake
 import pprint
-
+import sys
 path_data = "../data/"
 names_file_data = []
 keys = ["title", " author", " time", " description", " body", " section"]
@@ -17,7 +17,7 @@ pp = pprint.PrettyPrinter(indent=4)
 def test1():
     for i in range(len(names_file_data)):
         if i == 0:
-            with open( names_file_data[i], 'r') as f:
+            with open(names_file_data[i], 'r') as f:
                 data = json.load(f)
                 #df = pandas.DataFrame.from_dict(data)
                 #print(df)
@@ -81,6 +81,54 @@ def isArticleInThisYear(date_article, targeted_year):
     return date_article[0:4] == targeted_year
 
 
+def test3(argv):
+    if argv == 4:
+        r = Rake(ranking_metric=Metric.DEGREE_TO_FREQUENCY_RATIO, min_length=1, max_length=2)
+    elif argv == 5:
+        r = Rake(ranking_metric=Metric.WORD_DEGREE, min_length=1, max_length=2)
+    elif argv == 6:
+        r = Rake(ranking_metric=Metric.WORD_FREQUENCY, min_length=1, max_length=2)
+    elif argv == 7:
+        r = Rake(ranking_metric=Metric.DEGREE_TO_FREQUENCY_RATIO)
+    elif argv == 8:
+        r = Rake(ranking_metric=Metric.WORD_DEGREE)
+    elif argv == 9:
+        r = Rake(ranking_metric=Metric.WORD_FREQUENCY)
+    else:
+        r = Rake(min_length=1, max_length=2)  # Uses stopwords for english from NLTK, and all puntuation characters.
+    for year in years:
+        if year == "2017": # to remove
+            #for i in range(len(names_file_data)):
+            for i in range(2):
+                with open(names_file_data[i], 'r') as f:
+                    data = json.load(f)
 
+                    nb_docs = len(data.get(keys[0]))
+                    #for j in range(nb_docs):
+                    for j in range(10):
+                        date = data.get(keys[2]).get(str(j))
+                        if isArticleInThisYear(date, year):
+                            body = data.get(keys[4]).get(str(j))
+                            r.extract_keywords_from_text(body)
+                            pp.pprint(r.get_ranked_phrases_with_scores()[:6])  # To get keyword phrases ranked highest to lowest.
+                            section = data.get(keys[5]).get(str(j))
+                            print(section)
 
-nb_of_articles_per_year()
+# min_length=2, max_length=4
+#r = Rake(ranking_metric=Metric.DEGREE_TO_FREQUENCY_RATIO)
+#
+#
+
+#test3()
+
+arg = 1
+
+while (arg!=0):
+    arg = int(input("Please enter a number (0 to exit): \n"))
+    if arg == 1:
+        test1()
+    elif arg == 2:
+        test2()
+    elif arg >= 3:
+        test3(arg)
+
