@@ -29,3 +29,7 @@ After finding the issues, identifying the most important event of a particular n
 ## References
 “iDice: Problem Identification for Emerging Issues”, Qingwei Lin Jian-Guang Lou Hongyu Zhang Dongmei Zhang, https://dl.acm.org/citation.cfm?id=2884795
 “Identifying the Most Dominant Event in a News Article by Mining Event Coreference Relations”, Prafulla Kumar Choubey, Kaushik Raju, Ruihong Huang, https://aclanthology.coli.uni-saarland.de/papers/N18-2055/n18-2055
+
+## Prefessor consulting session
+* Only using the POS tag with SVO and VO pairs are not enough to find all events.
+* Finding following and independent events by matching the words or synonyms is too simple. Therefore, we should add more constraints to define the event types
