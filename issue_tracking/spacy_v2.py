@@ -41,48 +41,39 @@ def test():
         print("\n\n\t***\tBEGINNING YEAR " + year + "\t***")
         # for _ in range(1):
 
-        #if year == "2017":  # to remove
-        for i in range(len(names_file_data)):
-        #for i in range(2):
-            with open(names_file_data[i], 'r+') as f:
-                data = json.load(f)
+        if year == "2017":  # to remove
+            for i in range(len(names_file_data)):
+            #for i in range(2):
+                with open(names_file_data[i], 'r+') as f:
+                    data = json.load(f)
 
-                nb_docs = len(data.get(keys[0]))
-                for j in range(nb_docs):
-                #for j in range(1000):
-                    date = data.get(keys[2]).get(str(j))
-                    if isArticleInThisYear(date, year):
-                        body = data.get(keys[4]).get(str(j))
-                        title = data.get(keys[0]).get(str(j))
-                        #event, date = handle_article_4(title, body)
-                        handle_article_4(title, body)
-
-
-# add a column id for every new_article id
-def test2():
-    for year in years:
-        print("\n\n\t***\tBEGINNING YEAR " + year + "\t***")
-        # for _ in range(1):
-
-        #if year == "2017":  # to remove
-        for i in range(len(names_file_data)):
-        #for i in range(2):
-            with open(names_file_data[i], 'r+') as f:
-                data = json.load(f)
-
-                nb_docs = len(data.get(keys[0]))
-                new_data = {}
-                for j in range(nb_docs):
-                    new_data.update({str(j):str(j)})
+                    nb_docs = len(data.get(keys[0]))
+                    event_dict = {}
+                    event_date_dict = {}
+                    event_organization_dict = {}
+                    event_location_dict = {}
+                    for j in range(nb_docs):
                     #for j in range(1000):
-                    date = data.get(keys[2]).get(str(j))
-                    #if isArticleInThisYear(date, year):
-                        #body = data.get(keys[4]).get(str(j))
-                        #title = data.get(keys[0]).get(str(j))
-                        #handle_article_4(title, body)
-                with open(names_file_data_changed[i], 'w') as fp:
-                    data.update({'id':new_data})
-                    json.dump(data, fp)
+                        event = ""
+                        event_date = ""
+                        date = data.get(keys[2]).get(str(j))
+                        if isArticleInThisYear(date, year):
+                            body = data.get(keys[4]).get(str(j))
+                            title = data.get(keys[0]).get(str(j))
+                            event, event_date = handle_article_4(title, body)
+                            #handle_article_4(title, body)
+                            event_dict.update({str(j): event})
+                            event_date_dict.update({str(j): event_date})
+                            event_organization_dict.update({str(j): ""})
+                            event_location_dict.update({str(j): ""})
+                    with open(names_file_data_changed[i], 'w') as fp:
+                        data.update({'event': event_dict})
+                        data.update({'event_date': event_date_dict})
+                        data.update({'event_organization': event_organization_dict})
+                        data.update({'event_location': event_location_dict})
+                        json.dump(data, fp)
+
+
 
 
 def handle_article_4(title, body):
@@ -95,20 +86,23 @@ def handle_article_4(title, body):
         # todo: compare sentences with dates and title -> can it be the event
         # todo : still compare with title.
         sentence, date = extract_information_from_dates(body, dates, title)
-        print("\n\n\t***\tTITLE\tAND\tSENTENCE\tAND\tDATE\t***")
-        print(title)
-        print(sentence)
-        print(date)
-        doc = nlp(title)
-        for ent in doc.ents:
-            for label in important_labels_2:
-                if label == ent.label_:
-                    print("label: " + label + " text: " + ent.text)
+        if sentence != "" and date != "":
+            print("\n\n\t***\tTITLE\tAND\tSENTENCE\tAND\tDATE\t***")
+            print(title)
+            #print(sentence)
+            #print(date)
+            doc = nlp(body)
+            for ent in doc.ents:
+                for label in important_labels_2:
+                    if label == ent.label_:
+                        a = 1
+                        #print("label: " + label + " text: " + ent.text)
 
-
-        nb_displayed += 1
-        if nb_displayed == 10:
-            exit(0)
+            #nb_displayed += 1
+            #if nb_displayed == 10:
+            #    exit(0)
+        return sentence, date
+    return "", ""
 
 
 # takes into argument a doc and returns the dates present.
