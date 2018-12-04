@@ -37,73 +37,186 @@ def isArticleInThisYear(date_article, targeted_year):
 
 
 def test():
-    for year in years:
-        print("\n\n\t***\tBEGINNING YEAR " + year + "\t***")
+    #for year in years:
+        #print("\n\n\t***\tBEGINNING YEAR " + year + "\t***")
         # for _ in range(1):
 
-        if year == "2017":  # to remove
-            for i in range(len(names_file_data)):
-            #for i in range(2):
-                with open(names_file_data[i], 'r+') as f:
-                    data = json.load(f)
+        #if year == "2017":  # to remove
+    for i in range(len(names_file_data)):
+    #for i in range(2):
+        with open(names_file_data[i], 'r+') as f:
+            data = json.load(f)
 
-                    nb_docs = len(data.get(keys[0]))
-                    event_dict = {}
-                    event_date_dict = {}
-                    event_organization_dict = {}
-                    event_location_dict = {}
-                    for j in range(nb_docs):
-                    #for j in range(1000):
-                        event = ""
-                        event_date = ""
-                        date = data.get(keys[2]).get(str(j))
-                        if isArticleInThisYear(date, year):
-                            body = data.get(keys[4]).get(str(j))
-                            title = data.get(keys[0]).get(str(j))
-                            event, event_date = handle_article_4(title, body)
-                            #handle_article_4(title, body)
-                            event_dict.update({str(j): event})
-                            event_date_dict.update({str(j): event_date})
-                            event_organization_dict.update({str(j): ""})
-                            event_location_dict.update({str(j): ""})
-                    with open(names_file_data_changed[i], 'w') as fp:
-                        data.update({'event': event_dict})
-                        data.update({'event_date': event_date_dict})
-                        data.update({'event_organization': event_organization_dict})
-                        data.update({'event_location': event_location_dict})
-                        json.dump(data, fp)
+            nb_docs = len(data.get(keys[0]))
+            event_dict = {}
+            event_date_dict = {}
+            event_organization_dict = {}
+            event_person_dict = {}
+            event_geopolitical_entities_dict = {}
+            event_probability_dict = {}
 
+            for j in range(nb_docs):
+            #for j in range(1000):
+                event = ""
+                event_date = ""
+                date = data.get(keys[2]).get(str(j))
+                #if isArticleInThisYear(date, year):
+                body = data.get(keys[4]).get(str(j))
+                title = data.get(keys[0]).get(str(j))
+                event, event_date, event_organization, event_person, event_geopolitical_entities, event_probability = handle_article_4(title, body)
+                #handle_article_4(title, body)
+                event_dict.update({str(j): event})
+                event_date_dict.update({str(j): event_date})
+                event_organization_dict.update({str(j): event_organization})
+                event_person_dict.update({str(j): event_person})
+                event_geopolitical_entities_dict.update({str(j): event_geopolitical_entities})
+                event_probability_dict.update({str(j): event_probability})
 
+            with open(names_file_data_changed[i], 'w') as fp:
+                data.update({'event': event_dict})
+                data.update({'event_date': event_date_dict})
+                data.update({'event_organization': event_organization_dict})
+                data.update({'event_person': event_person_dict})
+                data.update({'event_geopolitical_entities': event_geopolitical_entities_dict})
+                data.update({'event_probability': event_probability_dict})
+                json.dump(data, fp)
 
 
 def handle_article_4(title, body):
     global nb_displayed
     doc = nlp(body)
     dates = handle_dates(doc)
+    organizations = []
+    persons = []
+    geopolitical_entities = []
+    probability = 0
 
     # if there was some dates in the article.
     if len(dates) > 0:
         # todo: compare sentences with dates and title -> can it be the event
         # todo : still compare with title.
-        sentence, date = extract_information_from_dates(body, dates, title)
+        sentence, date, weight_date = extract_information_from_dates(body, dates, title)
         if sentence != "" and date != "":
             print("\n\n\t***\tTITLE\tAND\tSENTENCE\tAND\tDATE\t***")
             print(title)
             #print(sentence)
             #print(date)
-            doc = nlp(body)
-            for ent in doc.ents:
-                for label in important_labels_2:
-                    if label == ent.label_:
-                        a = 1
-                        #print("label: " + label + " text: " + ent.text)
+            # organizations = get_organization(title, body, sentence)
+            # organizations = ", ".join(organizations) # to transform as a string.
+            organizations = get_for_label(title, body, sentence, "ORG")
+            organizations = ", ".join(organizations) # to transform as a string.
+            persons = get_for_label(title, body, sentence, "PERSON")
+            persons = ", ".join(persons) # to transform as a string.
+            geopolitical_entities = get_for_label(title, body, sentence, "GPE")
+            geopolitical_entities = ", ".join(geopolitical_entities) # to transform as a string.
+
+            # probability is 0 if not event, 1 if date_weight == 1, 2 if weight inside ]1 , 3[, 3 is up.  MINUS 1 is said is inside the event name
+            probability = 1
+            if weight_date > 1:
+                probability += 1
+            if weight_date >= 3:
+                probability += 1
+            if probability > 0 and "said" in sentence:
+                probability -= 1
 
             #nb_displayed += 1
             #if nb_displayed == 10:
             #    exit(0)
-        return sentence, date
-    return "", ""
 
+        return sentence, date, organizations, persons, geopolitical_entities, probability
+    return "", "", "", "", "", 0
+
+
+# CAN BE DELETED
+def get_organization(title, body, sentence):
+    doc = nlp(body)
+    organizations = []
+    for ent in doc.ents:
+        if ent.label_ == "ORG":
+            # if name of entity has part in title (title: Closure of Kaesong complex unilaterally ordered by ex-leader Park: panel ORG: the Kaesong Industrial Complex
+            if nb_similar_words_2_sentences(ent.text, title)>1 or nb_similar_words_2_sentences(ent.text, sentence)>1:
+
+                # we want to keep the bigger name describing the organization, if it is already in organizations
+                already_added = False
+
+                for i in range(len(organizations)):
+                    organization = organizations[i]
+                    if str.lower(ent.text) in str.lower(organization):
+                        already_added = True
+                        break
+                    if str.lower(organization) in str.lower(ent.text):
+                        organizations[i] = ent.text
+                        already_added = True
+                        break
+
+                # if was not yet get so we add it
+                if not already_added:
+
+                    labels.append(ent.text)
+                    print("NEW label: " + ent.label_ + " text: " + ent.text)
+    return organizations
+
+
+def get_for_label(title, body, sentence, label):
+    '''
+
+    :param title: title of the article
+    :param body: body of the article
+    :param sentence: best sentence from rake_nltk and containing data/words in common with title
+    :param label: label of entity that we try to extract from articles
+    :return: entities that were extracted
+    '''
+    doc = nlp(body)
+    entities_for_label = []
+    for ent in doc.ents:
+        if ent.label_ == label:
+            # if name of entity has part in title (title: Closure of Kaesong complex unilaterally ordered by ex-leader Park: panel ORG: the Kaesong Industrial Complex
+            if nb_similar_words_2_sentences(ent.text, title)>1 or nb_similar_words_2_sentences(ent.text, sentence)>1:
+                
+                # we want to keep the bigger name describing the entitie_for_label, if it is already in entities_for_label
+                already_added = False
+                for i in range(len(entities_for_label)):
+                    entitie_for_label = entities_for_label[i]
+                    if str.lower(ent.text) in str.lower(entitie_for_label):
+                        already_added = True
+                        break
+                    if str.lower(entitie_for_label) in str.lower(ent.text):
+                        entities_for_label[i] = ent.text
+                        already_added = True
+                        break
+
+                # if was not yet get so we add it
+                if not already_added:
+                    entities_for_label.append(ent.text)
+                    print("NEW TEXT FOR label: " + ent.label_ + " text: " + ent.text)
+    if len(entities_for_label) > 0:
+        print(entities_for_label)
+    return entities_for_label
+
+
+# CAN BE DELETED
+def get_organization(title, body, sentence):
+    doc = nlp(body)
+    organization = []
+    for ent in doc.ents:
+        if ent.label_ == "ORG":
+            # if name of entity has part in title (title: Closure of Kaesong complex unilaterally ordered by ex-leader Park: panel ORG: the Kaesong Industrial Complex
+            if nb_similar_words_2_sentences(ent.text, title) > 1 or nb_similar_words_2_sentences(
+                    ent.text, title) > 1:
+                labels.append(ent.text)
+                print("label: " + ent.label_ + " text: " + ent.text)
+        if ent.label_ == "PERSON":
+            # if name of entity has part in title (title: Closure of Kaesong complex unilaterally ordered by ex-leader Park: panel ORG: the Kaesong Industrial Complex
+            if nb_similar_words_2_sentences(ent.text, title) > 1 or nb_similar_words_2_sentences(
+                    ent.text, title) > 1:
+                labels.append(ent.text)
+                print("label: " + ent.label_ + " text: " + ent.text)
+        if ent.label_ == "GPE":
+            # if name of entity has part in title (title: Closure of Kaesong complex unilaterally ordered by ex-leader Park: panel ORG: the Kaesong Industrial Complex
+            if nb_similar_words_2_sentences(ent.text, title) > 1 or nb_similar_words_2_sentences(
+                    ent.text, title) > 1:
+                labels.append(ent.text)
+                print("label: " + ent.label_ + " text: " + ent.text)
 
 # takes into argument a doc and returns the dates present.
 # composed of the date and the weight # 1 per apparitions, 0.5 if before 100 characters
@@ -154,10 +267,10 @@ def extract_information_from_dates(body, dates, title):
                     #print(dates[i])
                     # print("same word than title = " + str(same_word_title))
                     # todo: maybe handle with the weigh of the dates to choice which date/sentence to extract.
-                    return sentence[1], dates[i]
+                    return sentence[1], dates[i][0], int(dates[i][1])
                 # else, sentence can still be interesting?
 
-    return "", ""
+    return "", "", 0
 
 
 # takes into arguments 2 sentences, and return an int: the number of same words #todo: optimize with weight?
