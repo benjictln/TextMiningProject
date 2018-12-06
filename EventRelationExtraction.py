@@ -28,6 +28,14 @@ if __name__ == '__main__':
     df_event = df.loc[df['event']!='']
     print(df_event.info())
 
+    # Y2016 = datetime.strptime('2016','%Y')
+    # Y2017 = datetime.strptime('2017','%Y')
+
+    # for q in range(df_event.shape[0]):
+    #     t = datetime.strptime(df_event.iloc[q].loc[' time'], TimeFormat)
+    #     if t > Y2016 and t < Y2017:
+    #         print(df_event.iloc[q])
+
     # Check different types in the field
     # temp = df['event_date'].values
     # tD = {}
