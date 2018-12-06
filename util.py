@@ -1,7 +1,7 @@
 import re, nltk, pickle, pandas as pd
 from os import listdir, path
 from nltk.stem import WordNetLemmatizer
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+# from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 
 def cleanContext(context = None):
     pattern = re.compile('[^A-Za-z]+')
@@ -43,15 +43,15 @@ def find_ngrams(input_list, n):
             return NewngramList
 
 # Calculate TfIdf
-def CalculateTfIdf(corpus = None):
-    vectorizer = CountVectorizer(tokenizer=lambda text: nltk.word_tokenize(text))
-    transformer = TfidfTransformer()
-    X = vectorizer.fit_transform(corpus)
-    tfidf = transformer.fit_transform(X)
-    weight = tfidf.toarray()
-    vocabulary = vectorizer.get_feature_names()
-    # print()
-    return weight, vocabulary
+# def CalculateTfIdf(corpus = None):
+#     vectorizer = CountVectorizer(tokenizer=lambda text: nltk.word_tokenize(text))
+#     transformer = TfidfTransformer()
+#     X = vectorizer.fit_transform(corpus)
+#     tfidf = transformer.fit_transform(X)
+#     weight = tfidf.toarray()
+#     vocabulary = vectorizer.get_feature_names()
+#     # print()
+#     return weight, vocabulary
 
 # if __name__ == "__main__":
 #     for dataset in ['baseball', 'hockey']:
